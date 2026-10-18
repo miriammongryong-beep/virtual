@@ -480,7 +480,16 @@ function applyProducts(rows){
     return '<div class="portfolio-panel'+(i?'':' active')+'" data-tab="'+esc(c)+'">'+html+'</div>';
   }).join('');
   var sec=document.getElementById('portfolio');
-  var old=sec.querySelector('.portfolio-tabs'), wrap=old.nextElementSibling;
+  var old=sec.querySelector('.portfolio-tabs'), wrap;
+  if(old){ wrap=old.nextElementSibling; }
+  else{
+    /* 기본 HTML에 탭 영역이 없는 경우(버츄얼 타입) 직접 만들어 줍니다 */
+    sec.querySelectorAll('.portfolio-panel').forEach(function(p){p.remove();});
+    old=document.createElement('div'); old.className='portfolio-tabs';
+    wrap=document.createElement('div');
+    sec.querySelector('.section-head').after(old); old.after(wrap);
+  }
+  if(!wrap||wrap.classList.contains('section-head')){ wrap=document.createElement('div'); old.after(wrap); }
   old.innerHTML=tabs; wrap.innerHTML=panels;
   wrap.querySelectorAll('.slider').forEach(initSlider);
 }
