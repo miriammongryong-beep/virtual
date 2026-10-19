@@ -504,6 +504,17 @@ function applySlides(rows){
     initSlider(document.querySelector('#'+id+' .slider'));
   });
 }
+function countDefs(lab,type,ph){
+  var parts=[['표정추가',50000,'5만원'],['악세서리추가',50000,'5만원'],['팔추가',50000,'5만원'],['의상, 헤어추가',100000,'10만원'],['동물귀추가',50000,'5만원']];
+  var lic=[['개인소장용',0,''],['방송용',0,''],['상업용',0,'']];
+  if(/count|수량|카운트/i.test(type)){
+    var rows=String(ph).split('\n').map(function(l){var p=l.split(/[|:]/);var n=(p[0]||'').trim(),pr=parseInt(String(p[1]||'').replace(/[^\d]/g,''),10)||0;return n?[n,pr,pr?(pr%10000===0?(pr/10000)+'만원':won(pr)):'']:null;}).filter(Boolean);
+    if(rows.length)return rows;
+  }
+  if(/추가\s*파츠/.test(lab))return parts;
+  if(/사용권/.test(lab))return lic;
+  return null;
+}
 function applyForm(rows){
   rows=dropHeader(rows,'항목'); if(!rows.length)return;
   var grid=document.querySelector('#form .form-grid'), ox=grid.querySelector('.rf-ox-field');
@@ -512,12 +523,20 @@ function applyForm(rows){
     var lab=(r[0]||'').trim(); if(!lab)return;
     var req=/^\s*(o|y|예|필수|1|true)/i.test(r[1]||''), multi=/여러|긴|multi|area/i.test(r[2]||''), isox=/^\s*ox/i.test(r[2]||''), ph=r[3]||'';
     var d=document.createElement('div'); d.className='form-field rf-item'; d.dataset.req=req?'1':'0';
+    var cnt=countDefs(lab,r[2]||'',ph);
+    if(cnt){
+      d.dataset.kind='count';
+      d.innerHTML='<label>'+esc(lab)+(req?' <span class="req">*</span>':'')+'</label><div class="count-list">'+cnt.map(function(c){
+        return '<div class="count-row" data-name="'+esc(c[0])+'" data-price="'+c[1]+'"><span>'+esc(c[0])+(c[2]?'<small>'+esc(c[2])+'</small>':'')+'</span><div class="cc"><button type="button" class="cstep" data-d="-1" aria-label="빼기">&#8722;</button><span class="cval">0</span><button type="button" class="cstep" data-d="1" aria-label="더하기">+</button></div></div>';
+      }).join('')+'</div>'+(cnt.some(function(c){return c[1]>0;})?'<div class="count-total">합계 0원</div>':'');
+      grid.appendChild(d); return;
+    }
     d.innerHTML='<label>'+esc(lab)+(req?' <span class="req">*</span>':'')+'</label>'+
       (isox?'<div class="select-btns pick"><button type="button" class="select-btn rf-pick" data-val="O">O</button><button type="button" class="select-btn rf-pick" data-val="X">X</button></div>':multi?'<textarea class="rf-text-input rf-textarea rf-in" rows="'+Math.max(3,(ph.split(/\r?\n/).length))+'" placeholder="'+esc(ph)+'"></textarea>'
             :'<input type="text" class="rf-text-input rf-in" placeholder="'+esc(ph)+'">');
     grid.appendChild(d);
   });
-  formRefresh();
+  updateCounts();formRefresh();
 }
 function applyNotice(rows){
   rows=dropHeader(rows,'제목'); if(!rows.length)return;
@@ -526,6 +545,7 @@ function applyNotice(rows){
     return '<details class="notice-card"><summary class="notice-card-head">'+esc(r[0])+'</summary><div class="notice-card-body">'+lines+'</div></details>';
   }).join('');
 }
+
 
 initTabs();
 document.querySelectorAll('.slider').forEach(initSlider);
